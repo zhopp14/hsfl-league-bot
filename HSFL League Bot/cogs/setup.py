@@ -95,9 +95,11 @@ async def add_objects_database(inter, sd: dict, objects: list, max: int):
         embed.add_field(name="Not Adding", value=OBJECTS_TO_NOT_ADD_REASONS)
         return await inter.send(embed=embed, ephemeral=True)
 
-    # Add Objects
+    # Add Objects - append to existing data instead of replacing
+    new_object_ids = [object.id for object in objects]
+    updated_data = current_data + new_object_ids
     await Database.add_data(
-      sd["table"], {setting_type.id: [object.id for object in objects]}
+      sd["table"], {setting_type.id: updated_data}
     )
 
     embed = Embed(
@@ -342,95 +344,117 @@ class AddRemoveButtons(disnake.ui.View):
     async def add_button(
         self, button: disnake.ui.Button, inter: disnake.MessageInteraction
     ):
-        await inter.response.defer()
-        sd = self.setting_data
-        setting_type = await get_setting_type(sd, self.inter)
+        try:
+            await inter.response.defer()
+            sd = self.setting_data
+            setting_type = await get_setting_type(sd, self.inter)
 
-        premium_check_ = await premium_guild_check(inter.guild.id)
-        if sd['premium'] and not premium_check_:
-          return await inter.send(not_premium_message, ephemeral=True)
-          
-        if premium_check_:
-          max = sd['premium_max']
-        else:
-          max = sd['max']
-      
-        current_data = await Database.get_data(sd["table"], setting_type.id)
-        
-        # Handle both list and dict formats
-        if current_data is None:
-            current_data = []
-        elif isinstance(current_data, dict):
-            if current_data:
-                current_data = list(current_data.values())[0] if isinstance(list(current_data.values())[0], list) else []
+            premium_check_ = await premium_guild_check(inter.guild.id)
+            if sd['premium'] and not premium_check_:
+              return await inter.send(not_premium_message, ephemeral=True)
+              
+            if premium_check_:
+              max = sd['premium_max']
             else:
+              max = sd['max']
+          
+            current_data = await Database.get_data(sd["table"], setting_type.id)
+            
+            # Handle both list and dict formats
+            if current_data is None:
                 current_data = []
-        elif not isinstance(current_data, list):
-            current_data = []
-    
-        if current_data:
-            if len(current_data) >= max:
-                return await inter.send(
-                    f"You can only have **up to {max} items** in the {sd['name']} table, **you currenty have {len(current_data)}**. Remove some items to add new ones. Ending command",
-                    ephemeral=True,
+            elif isinstance(current_data, dict):
+                if current_data:
+                    current_data = list(current_data.values())[0] if isinstance(list(current_data.values())[0], list) else []
+                else:
+                    current_data = []
+            elif not isinstance(current_data, list):
+                current_data = []
+        
+            if current_data:
+                if len(current_data) >= max:
+                    return await inter.send(
+                        f"You can only have **up to {max} items** in the {sd['name']} table, **you currenty have {len(current_data)}**. Remove some items to add new ones. Ending command",
+                        ephemeral=True,
+                    )
+
+            pretty_data = await format_database_data(
+                self.inter, sd["table"], setting_type.id
+            )
+            embed = await setting_embed(sd, pretty_data)
+
+            if "Role" in sd["name"]:
+                await inter.edit_original_message(
+                    embed=embed,
+                    view=ViewAdd(RolesDropdown, self.inter, "Add", sd, max),
                 )
-
-        pretty_data = await format_database_data(
-            self.inter, sd["table"], setting_type.id
-        )
-        embed = await setting_embed(sd, pretty_data)
-
-        if "Role" in sd["name"]:
-            await inter.edit_original_message(
-                embed=embed,
-                view=ViewAdd(RolesDropdown, self.inter, "Add", sd, max),
-            )
-        else:  # channel
-            await inter.edit_original_message(
-                embed=embed,
-                view=ViewAdd(ChannelsDropdown, self.inter, "Add", sd, max),
-            )
+            else:  # channel
+                await inter.edit_original_message(
+                    embed=embed,
+                    view=ViewAdd(ChannelsDropdown, self.inter, "Add", sd, max),
+                )
+        except disnake.NotFound:
+            try:
+                await inter.send("The message was deleted or interaction expired. Please try again.", ephemeral=True)
+            except:
+                pass
+        except Exception as e:
+            try:
+                await inter.send(f"Error: {str(e)}", ephemeral=True)
+            except:
+                pass
 
     @disnake.ui.button(label="Remove", style=disnake.ButtonStyle.red)
     async def remove_button(
         self, button: disnake.ui.Button, inter: disnake.MessageInteraction
     ):
-        await inter.response.defer()
-        sd = self.setting_data
-        setting_type = await get_setting_type(sd, self.inter)
+        try:
+            await inter.response.defer()
+            sd = self.setting_data
+            setting_type = await get_setting_type(sd, self.inter)
 
-        premium_check_ = await premium_guild_check(inter.guild.id)
-        if sd['premium'] and not premium_check_:
-          return await inter.send(not_premium_message, ephemeral=True)
+            premium_check_ = await premium_guild_check(inter.guild.id)
+            if sd['premium'] and not premium_check_:
+              return await inter.send(not_premium_message, ephemeral=True)
 
-    
-        current_data = await Database.get_data(sd["table"], setting_type.id)
-        if current_data is None:
-            return await inter.send("You don't have any data...", ephemeral=True)
         
-        # Handle both list and dict formats
-        if isinstance(current_data, dict):
-            if not current_data:
+            current_data = await Database.get_data(sd["table"], setting_type.id)
+            if current_data is None:
                 return await inter.send("You don't have any data...", ephemeral=True)
-        elif isinstance(current_data, list):
-            if not current_data:
-                return await inter.send("You don't have any data...", ephemeral=True)
+            
+            # Handle both list and dict formats
+            if isinstance(current_data, dict):
+                if not current_data:
+                    return await inter.send("You don't have any data...", ephemeral=True)
+            elif isinstance(current_data, list):
+                if not current_data:
+                    return await inter.send("You don't have any data...", ephemeral=True)
 
-        pretty_data = await format_database_data(
-            self.inter, sd["table"], setting_type.id
-        )
-        embed = await setting_embed(sd, pretty_data)
+            pretty_data = await format_database_data(
+                self.inter, sd["table"], setting_type.id
+            )
+            embed = await setting_embed(sd, pretty_data)
 
-        if "Role" in sd["name"]:
-            await inter.edit_original_message(
-                embed=embed,
-                view=ViewAdd(RolesDropdown, self.inter, "Remove", sd),
-            )
-        else:  # channel
-            await inter.edit_original_message(
-                embed=embed,
-                view=ViewAdd(ChannelsDropdown, self.inter, "Remove", sd),
-            )
+            if "Role" in sd["name"]:
+                await inter.edit_original_message(
+                    embed=embed,
+                    view=ViewAdd(RolesDropdown, self.inter, "Remove", sd),
+                )
+            else:  # channel
+                await inter.edit_original_message(
+                    embed=embed,
+                    view=ViewAdd(ChannelsDropdown, self.inter, "Remove", sd),
+                )
+        except disnake.NotFound:
+            try:
+                await inter.send("The message was deleted or interaction expired. Please try again.", ephemeral=True)
+            except:
+                pass
+        except Exception as e:
+            try:
+                await inter.send(f"Error: {str(e)}", ephemeral=True)
+            except:
+                pass
 
 
 class ServerInviteUrl(disnake.ui.View):
