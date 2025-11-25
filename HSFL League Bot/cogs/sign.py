@@ -454,7 +454,7 @@ class SignCommands(commands.Cog):
     if team is None:
       team = await auto_detect_team(inter.guild.id, inter.author)
       if team is None:
-        return await inter.send(embed=error_embed("Team Required", "You must specify a team or have an assigned team in `/team set_owner`"), delete_after=10)
+        return await inter.send(embed=error_embed("Team Required", "You must specify a team parameter"), delete_after=10)
 
     tr_checks = await transaction_checks(inter, "Signing", "Offers", team)
     if tr_checks != True:
@@ -534,7 +534,7 @@ class SignCommands(commands.Cog):
     if team is None:
       team = await auto_detect_team(inter.guild.id, inter.author)
       if team is None:
-        return await inter.send(embed=error_embed("Team Required", "You must specify a team or have an assigned team in `/team set_owner`"), delete_after=10)
+        return await inter.send(embed=error_embed("Team Required", "You must specify a team parameter"), delete_after=10)
     
     tr_checks = await transaction_checks(inter, "Signing", "Transactions", team)
     if tr_checks != True:

@@ -385,7 +385,7 @@ class TradeCommands(commands.Cog):
       team_role = team
 
     if not team_role:
-      return await inter.send(f"You are not assigned to a team. Use `/team set_owner` to assign yourself, or use the `team` parameter", ephemeral=True)
+      return await inter.send(f"You are not assigned to a team. Please use the `team` parameter", ephemeral=True)
 
     if team_role not in author.roles:
       return await inter.send(f"You are not on the {team_role}", ephemeral=True)
@@ -438,7 +438,7 @@ class TradeCommands(commands.Cog):
       author_team_role = your_team
 
     if not author_team_role:
-      return await inter.send(f"You are not assigned to a team. Use `/team set_owner` to assign yourself, or use the `your_team` parameter")
+      return await inter.send(f"You are not assigned to a team. Please use the `your_team` parameter")
 
     if team == author_team_role:
        return await inter.send("You can't trade with yourself")

@@ -366,9 +366,31 @@ async def validate_team_ownership(guild_id: int, member: disnake.Member, team: d
 async def auto_detect_team(guild_id: int, member: disnake.Member) -> disnake.Role:
   """
   Automatically detect the team for a coach/staff member.
+  First checks explicit coach-to-team mapping, then checks team role membership.
   Returns the team Role if found, None otherwise.
   """
-  return await get_coach_team(guild_id, member)
+  team = await get_coach_team(guild_id, member)
+  if team:
+    return team
+  
+  team_data = await Database.get_data("TeamRole", guild_id)
+  if team_data is None or not isinstance(team_data, (list, dict)):
+    return None
+    
+  if isinstance(team_data, list):
+    team_ids = team_data
+  else:
+    team_ids = list(team_data.values()) if isinstance(team_data, dict) else []
+  
+  for team_id in team_ids:
+    try:
+      team_role = member.guild.get_role(int(team_id))
+      if team_role and team_role in member.roles:
+        return team_role
+    except (ValueError, TypeError):
+      continue
+  
+  return None
 
 
 async def set_channel_config(guild_id: int, channel_type: str, channel_id: int) -> tuple[bool, str]:
