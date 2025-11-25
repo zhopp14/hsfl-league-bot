@@ -410,8 +410,10 @@ async def set_channel_config(guild_id: int, channel_type: str, channel_id: int) 
   elif not isinstance(channel_config[channel_type], list):
     channel_config[channel_type] = []
   
-  if channel_id not in channel_config[channel_type]:
-    channel_config[channel_type].append(channel_id)
+  # Convert channel_id to string for consistency with database storage
+  channel_id_str = str(channel_id)
+  if channel_id_str not in channel_config[channel_type]:
+    channel_config[channel_type].append(channel_id_str)
   else:
     return False, f"Channel {channel_id} is already configured for {channel_type}"
   
@@ -434,10 +436,12 @@ async def remove_channel_config(guild_id: int, channel_type: str, channel_id: in
   if not isinstance(channel_config[channel_type], list):
     return False, f"Invalid configuration for {channel_type}"
   
-  if channel_id not in channel_config[channel_type]:
+  # Convert channel_id to string for consistency
+  channel_id_str = str(channel_id)
+  if channel_id_str not in channel_config[channel_type]:
     return False, f"Channel {channel_id} is not configured for {channel_type}"
   
-  channel_config[channel_type].remove(channel_id)
+  channel_config[channel_type].remove(channel_id_str)
   
   if not channel_config[channel_type]:
     del channel_config[channel_type]
@@ -457,7 +461,7 @@ async def get_channel_config(guild_id: int, channel_type: str) -> list[int]:
   
   channels = channel_config.get(channel_type, [])
   if isinstance(channels, list):
-    return channels
+    return [int(cid) if isinstance(cid, str) else cid for cid in channels if cid]
   return []
 
 
@@ -469,7 +473,11 @@ async def get_all_channel_config(guild_id: int) -> dict:
   channel_config = await Database.get_data('ChannelConfig', guild_id)
   if not channel_config or not isinstance(channel_config, dict):
     return {}
-  return channel_config
+  result = {}
+  for cmd_type, channel_ids in channel_config.items():
+    if isinstance(channel_ids, list):
+      result[cmd_type] = [int(cid) if isinstance(cid, str) else cid for cid in channel_ids if cid]
+  return result
 
 
 async def check_channel_config(inter: disnake.GuildCommandInteraction, channel_type: str) -> tuple[bool, str]:
