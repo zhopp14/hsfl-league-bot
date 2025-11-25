@@ -1,15 +1,7 @@
 try:
-    import main
-    print("main.py: OK")
-except SyntaxError as e:
-    print(f"main.py: SYNTAX ERROR - {e}")
+    from cogs.setup import SetupCommands, add_objects_database
+    print("Setup cog imports OK")
 except Exception as e:
-    print(f"main.py: IMPORT ERROR - {e}")
-
-try:
-    from cogs import league
-    print("cogs/league.py: OK")
-except SyntaxError as e:
-    print(f"league.py: SYNTAX ERROR - {e}")
-except Exception as e:
-    print(f"league.py: IMPORT ERROR (expected, missing dependencies)")
+    print(f"Import error: {e}")
+    import traceback
+    traceback.print_exc()

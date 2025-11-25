@@ -59,10 +59,6 @@ async def transaction_checks(inter, on_table: str, channel_type: str, team: disn
   if not check_toggle_:
       return "Transactions are currently off"
 
-  check_channel_, channel_error = await check_channel_config(inter, channel_type)
-  if not check_channel_:
-    return channel_error if channel_error else "You can't use that command in this channel"
-
   if await has_perms(team):
       return "To prevent abuse, roles with permissions aren't allowed to be used in signing commands"
 
