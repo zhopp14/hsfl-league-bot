@@ -252,6 +252,7 @@ class AcceptDeclineView(disnake.ui.View):
       style=disnake.ButtonStyle.green
   )
   async def accept_button(self, button, inter):
+    await inter.response.defer()
     try:
       await self.kwargs['accept_function'](inter, self.kwargs)
     except Exception as e:
@@ -273,6 +274,7 @@ class AcceptDeclineView(disnake.ui.View):
     style=disnake.ButtonStyle.red
   )
   async def decline_button(self, button, inter):
+    await inter.response.defer(ephemeral=True)
     try:
       await self.kwargs['decline_function'](inter, self.kwargs)
     except Exception as e:
@@ -363,6 +365,7 @@ class OfferButtons(disnake.ui.View):
     style = disnake.ButtonStyle.green 
   )
   async def accept_button(self, button: disnake.ui.Button, inter):
+    await inter.response.defer()
     sign_checks_ = await sign_checks(self.inter, self.team, self.member)
     if not sign_checks_[0]:
       embed = Embed(title="Unable to be signed", description=sign_checks_[1])
@@ -409,6 +412,7 @@ class OfferButtons(disnake.ui.View):
   )
   async def decline_button(self, button: disnake.ui.Button, inter):    
 
+    await inter.response.defer()
     embed = Embed(
         title='Offer Declined', 
         description=f'{self.member.mention} `{self.member.display_name}` has **declined**  the {self.team.name} offer\n > **Coach:** {self.inter.author.mention} \n > **Contract:** {self.contract}',
