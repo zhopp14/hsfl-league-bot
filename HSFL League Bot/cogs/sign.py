@@ -745,11 +745,6 @@ class SignCommands(commands.Cog):
     check_toggle_ = await check_toggle('Signing', inter.guild.id)
     if not check_toggle_:
       return await inter.send(embed=error_embed("Off", "Transactions are currently off"), delete_after=10)
-      
-    check_channel_, channel_error = await check_channel_config(inter, 'Transactions')
-    if not check_channel_:
-      return await inter.send(embed=error_embed("Wrong Channel", channel_error if channel_error else "You can't use that command in this channel"), delete_after=10)
-
 
     demote = await demote_command(inter, member)
     if demote[0]:
