@@ -708,7 +708,7 @@ class SignCommands(commands.Cog):
       if not same_team:
         return await inter.send(embed=error_embed("Not Same Team", f"You and {member.display_name} are on different teams"), delete_after=10)
       
-    promote = await promote_member(inter, member, coach_role.id)
+    promote = await promote_member(inter, member, coach_role)
     if promote[0]:
         try:
             await member.add_roles(promote[1])
